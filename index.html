@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PM Dashboard — Park Inn Procurement</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --primary: #1B3A5C;
+    --primary-light: #2A5285;
+    --gold: #C9A84C;
+    --gold-light: #F5EAC8;
+    --red: #C0392B;
+    --green: #27AE60;
+    --orange: #E67E22;
+    --gray-50: #F8F9FA;
+    --gray-100: #F0F2F5;
+    --gray-200: #E0E4EA;
+    --gray-400: #9BA5B4;
+    --gray-600: #5A6478;
+    --gray-800: #2D3748;
+    --white: #FFFFFF;
+    --border: #DDE2EA;
+    --shadow: 0 2px 8px rgba(0,0,0,0.07);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--gray-100);
+    min-height: 100vh;
+    color: var(--gray-800);
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    background: var(--primary);
+    border-bottom: 2px solid var(--gold);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .topbar-logo {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar-hotel {
+    color: var(--white);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  .topbar-sub {
+    color: var(--gold);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .topbar-divider {
+    width: 1px;
+    height: 30px;
+    background: rgba(255,255,255,0.15);
+  }
+
+  .topbar-title {
+    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .topbar-date {
+    color: rgba(255,255,255,0.5);
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+
+  .refresh-btn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--white);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 1px;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s;
+  }
+
+  .refresh-btn:hover {
+    background: rgba(255,255,255,0.2);
+  }
+
+  /* ── MAIN ── */
+  .main {
+    padding: 24px 32px 48px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── KPI CARDS ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .kpi-card {
+    background: var(--white);
+    border-radius: 8px;
+    padding: 18px 16px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    border-top: 3px solid;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .kpi-card::after {
+    content: '';
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    opacity: 0.05;
+  }
+
+  .kpi-card.blue { border-top-color: var(--primary); }
+  .kpi-card.blue::after { background: var(--primary); }
+
+  .kpi-card.red { border-top-color: var(--red); }
+  .kpi-card.red::after { background: var(--red); }
+
+  .kpi-card.orange { border-top-color: var(--orange); }
+  .kpi-card.orange::after { background: var(--orange); }
+
+  .kpi-card.green { border-top-color: var(--green); }
+  .kpi-card.green::after { background: var(--green); }
+
+  .kpi-card.gold { border-top-color: var(--gold); }
+  .kpi-card.gold::after { background: var(--gold); }
+
+  .kpi-icon {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--gray-800);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .kpi-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--gray-400);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── FILTERS ── */
+  .filters-bar {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    box-shadow: var(--shadow);
+  }
+
+  .filter-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--gray-400);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .filter-select {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--gray-800);
+    background: var(--gray-50);
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 12px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+
+  .filter-select:focus { border-color: var(--primary); }
+
+  .filter-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+  }
+
+  .filter-search {
+    flex: 1;
+    min-width: 160px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--gray-800);
+    background: var(--gray-50);
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .filter-search:focus { border-color: var(--primary); }
+
+  .clear-btn {
+    background: none;
+    border: 1.5px solid var(--border);
+    color: var(--gray-600);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .clear-btn:hover { border-color: var(--gray-400); }
+
+  /* ── TABLE CARD ── */
+  .table-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .table-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--gray-50);
+  }
+
+  .table-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--gray-800);
+  }
+
+  .table-count {
+    font-size: 11px;
+    color: var(--gray-400);
+    margin-top: 2px;
+  }
+
+  .table-actions { display: flex; gap: 8px; }
+
+  .table-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s;
+    border: 1.5px solid;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-export {
+    background: none;
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  .btn-export:hover {
+    background: var(--primary);
+    color: var(--white);
+  }
+
+  .table-wrapper { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  thead tr { background: var(--primary); }
+
+  thead th {
+    padding: 10px 12px;
+    color: rgba(255,255,255,0.85);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-align: left;
+    white-space: nowrap;
+    border-right: 1px solid rgba(255,255,255,0.08);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  thead th:last-child { border-right: none; }
+  thead th:hover { background: var(--primary-light); }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+    cursor: pointer;
+  }
+
+  tbody tr:hover { background: #F0F4F8; }
+  tbody tr:last-child { border-bottom: none; }
+
+  tbody td {
+    padding: 11px 12px;
+    color: var(--gray-800);
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .td-pr {
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+
+  .td-dept {
+    font-size: 11px;
+    color: var(--gray-600);
+  }
+
+  .td-name { font-weight: 500; }
+
+  .td-items {
+    font-size: 11px;
+    color: var(--gray-600);
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .td-total {
+    font-weight: 700;
+    color: var(--primary);
+    text-align: right;
+  }
+
+  .td-date {
+    font-size: 11px;
+    color: var(--gray-400);
+  }
+
+  /* Priority Badge */
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .badge-HIGH { background: #FDECEA; color: var(--red); border: 1px solid #F5C6C2; }
+  .badge-MEDIUM { background: #FDEBD0; color: #8B4513; border: 1px solid #F5CBA7; }
+  .badge-LOW { background: #D4EDDA; color: #155724; border: 1px solid #A8D5B5; }
+
+  /* Status Badge */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .status-New { background: #EBF4FF; color: #1A3A5C; border: 1px solid #B8D4F0; }
+  .status-New .status-dot { background: var(--primary); }
+
+  .status-InProgress { background: #FEF3CD; color: #8B6914; border: 1px solid #DEC97A; }
+  .status-InProgress .status-dot { background: var(--gold); }
+
+  .status-Approved { background: #D4EDDA; color: #155724; border: 1px solid #A8D5B5; }
+  .status-Approved .status-dot { background: var(--green); }
+
+  .status-Rejected { background: #FDECEA; color: var(--red); border: 1px solid #F5C6C2; }
+  .status-Rejected .status-dot { background: var(--red); }
+
+  /* Check icons */
+  .check-yes { color: var(--green); font-size: 14px; }
+  .check-no { color: var(--gray-200); font-size: 14px; }
+
+  /* Action buttons */
+  .action-btns { display: flex; gap: 6px; }
+
+  .act-btn {
+    width: 28px;
+    height: 28px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .act-btn:hover { border-color: var(--primary); background: #EBF4FF; }
+
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--gray-400);
+  }
+
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-title { font-size: 14px; font-weight: 600; color: var(--gray-600); margin-bottom: 4px; }
+  .empty-sub { font-size: 12px; }
+
+  /* ── MODAL OVERLAY ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: var(--white);
+    border-radius: 10px;
+    width: 100%;
+    max-width: 820px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    animation: modalIn 0.2s ease;
+  }
+
+  @keyframes modalIn {
+    from { transform: translateY(-16px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-bar {
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .modal-bar-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--gray-800);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .modal-bar-actions { display: flex; gap: 8px; }
+
+  .modal-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    border: 1.5px solid;
+    transition: all 0.15s;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-close-modal {
+    background: none;
+    color: var(--gray-600);
+    border-color: var(--border);
+  }
+
+  .btn-close-modal:hover { border-color: var(--gray-400); }
+
+  .btn-print-modal {
+    background: var(--primary);
+    color: var(--white);
+    border-color: var(--primary);
+  }
+
+  .btn-print-modal:hover { background: var(--primary-light); }
+
+  .btn-preview-modal {
+    background: none;
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  .btn-preview-modal:hover { background: var(--primary); color: var(--white); }
+
+  /* Modal Content */
+  .modal-body { padding: 24px; }
+
+  /* PR Preview */
+  .pr-preview-header {
+    border-bottom: 3px solid var(--primary);
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .pr-hotel-name { font-size: 18px; font-weight: 700; color: var(--primary); }
+  .pr-hotel-sub { font-size: 10px; color: var(--gray-400); margin-top: 2px; letter-spacing: 0.5px; }
+
+  .pr-doc-right { text-align: right; }
+  .pr-doc-title { font-size: 14px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
+  .pr-doc-number { font-size: 13px; font-weight: 600; color: var(--gold); margin-top: 4px; }
+  .pr-doc-date { font-size: 10px; color: var(--gray-400); margin-top: 2px; }
+
+  .pr-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    background: var(--gray-50);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    margin-bottom: 20px;
+  }
+
+  .pr-meta-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--gray-400);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
+  .pr-meta-value { font-size: 12px; font-weight: 500; color: var(--gray-800); }
+
+  .pr-section-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--primary);
+    border-bottom: 1.5px solid var(--primary);
+    padding-bottom: 5px;
+    margin-bottom: 12px;
+  }
+
+  .pr-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin-bottom: 20px;
+  }
+
+  .pr-table thead tr { background: var(--primary); }
+
+  .pr-table thead th {
+    padding: 8px 10px;
+    color: rgba(255,255,255,0.9);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-align: left;
+  }
+
+  .pr-table tbody td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--gray-800);
+  }
+
+  .pr-table tbody tr:nth-child(even) td { background: var(--gray-50); }
+
+  .pr-table tfoot td {
+    padding: 10px;
+    border-top: 2px solid var(--primary);
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .pr-total-label {
+    text-align: right;
+    color: var(--gray-600);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .pr-total-value { color: var(--primary); }
+
+  .pr-notes-box {
+    background: var(--gray-50);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 11px;
+    color: var(--gray-600);
+    margin-bottom: 24px;
+    line-height: 1.7;
+  }
+
+  .pr-notes-box strong {
+    display: block;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    margin-bottom: 4px;
+  }
+
+  .pr-sigs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 8px;
+    margin-bottom: 20px;
+  }
+
+  .pr-sig { text-align: center; }
+  .pr-sig-line { height: 44px; border-bottom: 1.5px solid var(--gray-400); margin-bottom: 6px; }
+  .pr-sig-name { font-size: 10px; font-weight: 600; color: var(--gray-600); }
+  .pr-sig-title { font-size: 9px; color: var(--gray-400); margin-top: 1px; }
+
+  .pr-footer-strip {
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .pr-footer-text { font-size: 9px; color: var(--gray-400); line-height: 1.6; }
+  .pr-footer-stamp { font-size: 9px; color: var(--gray-400); letter-spacing: 1px; text-transform: uppercase; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--primary);
+    color: var(--white);
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    display: none;
+    align-items: center;
+    gap: 8px;
+    z-index: 3000;
+    border-left: 3px solid var(--gold);
+    animation: slideUp 0.3s ease;
+  }
+
+  .toast.show { display: flex; }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .main { padding: 16px; }
+    .topbar { padding: 0 16px; }
+  }
+
+  @media (max-width: 600px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .pr-meta-grid { grid-template-columns: repeat(2, 1fr); }
+    .pr-sigs { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast">✅ Status updated successfully!</div>
+
+<div class="modal-overlay" id="prModal">
+  <div class="modal">
+    <div class="modal-bar">
+      <div class="modal-bar-title">
+        📄 Purchase Requisition
+        <span id="modalPRNum" style="font-size:12px;color:var(--gold);font-weight:600"></span>
+      </div>
+      <div class="modal-bar-actions">
+        <button class="modal-action-btn btn-close-modal" onclick="closeModal()">✕ Close</button>
+        <button class="modal-action-btn btn-preview-modal" onclick="previewPR()">👁 Preview</button>
+        <button class="modal-action-btn btn-print-modal" onclick="printPR()">🖨 Print</button>
+      </div>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo">
+      <div class="topbar-hotel">Park Inn by Radisson</div>
+      <div class="topbar-sub">Procurement Management</div>
+    </div>
+    <div class="topbar-divider"></div>
+    <div class="topbar-title">PM Dashboard</div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-date" id="topbarDate"></div>
+    <button class="refresh-btn" onclick="fetchLivePRs()">↻ Refresh</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="section-label">Overview</div>
+  <div class="kpi-grid">
+    <div class="kpi-card blue">
+      <div class="kpi-icon">📋</div>
+      <div class="kpi-value" id="kpiTotal">0</div>
+      <div class="kpi-label">Total PRs</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-icon">🔴</div>
+      <div class="kpi-value" id="kpiHigh">0</div>
+      <div class="kpi-label">High Priority</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-icon">⏳</div>
+      <div class="kpi-value" id="kpiPending">0</div>
+      <div class="kpi-label">Pending Review</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-icon">✅</div>
+      <div class="kpi-value" id="kpiApproved">0</div>
+      <div class="kpi-label">Approved</div>
+    </div>
+    <div class="kpi-card gold">
+      <div class="kpi-icon">💰</div>
+      <div class="kpi-value" id="kpiTotal2" style="font-size:18px">0</div>
+      <div class="kpi-label">Total Value (SAR)</div>
+    </div>
+  </div>
+
+  <div class="section-label">Purchase Requisitions</div>
+  <div class="filters-bar">
+    <span class="filter-label">Filter</span>
+    <select class="filter-select" id="filterDept" onchange="applyFilters()">
+      <option value="">All Departments</option>
+      <option>F&B Kitchen</option>
+      <option>F&B Restaurant</option>
+      <option>Housekeeping</option>
+      <option>Front Office</option>
+      <option>Sales & Marketing</option>
+      <option>Maintenance</option>
+      <option>Finance</option>
+      <option>HR & Admin</option>
+    </select>
+    <select class="filter-select" id="filterPriority" onchange="applyFilters()">
+      <option value="">All Priorities</option>
+      <option value="HIGH">HIGH</option>
+      <option value="MEDIUM">MEDIUM</option>
+      <option value="LOW">LOW</option>
+    </select>
+    <select class="filter-select" id="filterStatus" onchange="applyFilters()">
+      <option value="">All Statuses</option>
+      <option value="New">New</option>
+      <option value="InProgress">In Progress</option>
+      <option value="Approved">Approved</option>
+      <option value="Rejected">Rejected</option>
+    </select>
+    <div class="filter-divider"></div>
+    <input type="text" class="filter-search" id="filterSearch"
+      placeholder="🔍 Search PR#, requester, item..." oninput="applyFilters()">
+    <button class="clear-btn" onclick="clearFilters()">✕ Clear</button>
+  </div>
+
+  <div class="table-card">
+    <div class="table-header">
+      <div>
+        <div class="table-title">Purchase Requisition List</div>
+        <div class="table-count" id="tableCount">Showing 0 records</div>
+      </div>
+      <div class="table-actions">
+        <button class="table-btn btn-export" onclick="exportCSV()">↓ Export CSV</button>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortTable('prNumber')">PR # ↕</th>
+            <th onclick="sortTable('submittedAt')">Date ↕</th>
+            <th onclick="sortTable('requesterName')">Requester ↕</th>
+            <th onclick="sortTable('department')">Department ↕</th>
+            <th>Items</th>
+            <th onclick="sortTable('grandTotal')">Total (SAR) ↕</th>
+            <th onclick="sortTable('priority')">Priority ↕</th>
+            <th onclick="sortTable('status')">Status ↕</th>
+            <th>Email</th>
+            <th>Slack</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="prTableBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyState" style="display:none">
+        <div class="empty-icon">📭</div>
+        <div class="empty-title">No Purchase Requisitions Found</div>
+        <div class="empty-sub">Submit a PR using the form or adjust your filters</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── DATA PARSING CONTEXT ──
+  let allPRs = [];
+  let filteredPRs = [];
+  let currentPR = null;
+  let sortKey = 'submittedAt';
+  let sortAsc = false;
+
+  // ⚠️ CONNECT LIVE WEBHOOK DOMAIN HERE (Omit trailing slash)
+  const N8N_BASE_URL = "https://n8n.srv1106977.hstgr.cloud/webhook-test/get-prs"; 
+
+  // ── TOPBAR DATE ──
+  function setTopbarDate() {
+    const now = new Date();
+    const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+    document.getElementById('topbarDate').textContent = now.toLocaleDateString('en-GB', opts);
+  }
+
+  // ── ROUTE 1: ASYNCHRONOUS DATA FETCH ──
+  async function fetchLivePRs() {
+    const refreshBtn = document.querySelector('.refresh-btn');
+    try {
+      if (refreshBtn) refreshBtn.textContent = "⏳ Loading...";
+      
+      const response = await fetch(`${N8N_BASE_URL}/get-prs`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      
+      if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+      
+      allPRs = await response.json();
+      applyFilters();
+    } catch (error) {
+      console.error("Dashboard engine failed to pull data:", error);
+      alert("Backend connection error. Verify your n8n GET webhook is live and active.");
+    } finally {
+      if (refreshBtn) refreshBtn.textContent = "↻ Refresh";
+    }
+  }
+
+  // ── ROUTE 2: TRANSACTION STATUS UPDATE ──
+  async function updatePRStatus(airtableRecordId, newStatus) {
+    try {
+      const response = await fetch(`${N8N_BASE_URL}/update-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: airtableRecordId, status: newStatus })
+      });
+
+      if (!response.ok) throw new Error("Status commit request failed.");
+
+      const toast = document.getElementById('toast');
+      toast.textContent = `✅ PR Status successfully changed to ${newStatus}!`;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+      
+      closeModal();
+      fetchLivePRs();
+    } catch (error) {
+      console.error("Status transaction aborted:", error);
+      alert("Failed to modify record status. Verify your n8n POST webhook configurations.");
+    }
+  }
+
+  // ── KPI ──
+  function updateKPIs(data) {
+    document.getElementById('kpiTotal').textContent = data.length;
+    document.getElementById('kpiHigh').textContent = data.filter(p => p.priority === 'HIGH').length;
+    document.getElementById('kpiPending').textContent = data.filter(p => p.status === 'New').length;
+    document.getElementById('kpiApproved').textContent = data.filter(p => p.status === 'Approved').length;
+    const total = data.reduce((s, p) => s + parseFloat(p.grandTotal || 0), 0);
+    document.getElementById('kpiTotal2').textContent = total.toLocaleString('en', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+
+  // ── RENDER TABLE ──
+  function renderTable() {
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const dept = document.getElementById('filterDept').value;
+    const priority = document.getElementById('filterPriority').value;
+    const status = document.getElementById('filterStatus').value;
+    const search = document.getElementById('filterSearch').value.toLowerCase();
+
+    filteredPRs = allPRs.filter(pr => {
+      const matchDept = !dept || pr.department === dept;
+      const matchPriority = !priority || pr.priority === priority;
+      const matchStatus = !status || pr.status === status;
+      const matchSearch = !search ||
+        pr.prNumber.toLowerCase().includes(search) ||
+        pr.requesterName.toLowerCase().includes(search) ||
+        pr.department.toLowerCase().includes(search) ||
+        (pr.items && pr.items.some(i => i.article.toLowerCase().includes(search)));
+      return matchDept && matchPriority && matchStatus && matchSearch;
+    });
+
+    filteredPRs.sort((a, b) => {
+      let va = a[sortKey] || '';
+      let vb = b[sortKey] || '';
+      if (sortKey === 'grandTotal') { va = parseFloat(va); vb = parseFloat(vb); }
+      if (va < vb) return sortAsc ? -1 : 1;
+      if (va > vb) return sortAsc ? 1 : -1;
+      return 0;
+    });
+
+    const tbody = document.getElementById('prTableBody');
+    const empty = document.getElementById('emptyState');
+
+    if (filteredPRs.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      document.getElementById('tableCount').textContent = 'Showing 0 records';
+      updateKPIs(filteredPRs);
+      return;
+    }
+
+    empty.style.display = 'none';
+    document.getElementById('tableCount').textContent = `Showing ${filteredPRs.length} of ${allPRs.length} records`;
+
+    tbody.innerHTML = filteredPRs.map(pr => {
+      const itemSummary = pr.items && pr.items.length > 0
+        ? pr.items.map(i => `${i.article} ×${i.qty}`).join(', ')
+        : '—';
+
+      const statusClass = pr.status.replace(/\s/g, '');
+
+      return `
+        <tr onclick="openModal('${pr.id}')">
+          <td class="td-pr">${pr.prNumber}</td>
+          <td class="td-date">${pr.submittedAt}</td>
+          <td class="td-name">${pr.requesterName}</td>
+          <td class="td-dept">${pr.department}</td>
+          <td class="td-items" title="${itemSummary}">${itemSummary}</td>
+          <td class="td-total">SAR ${parseFloat(pr.grandTotal).toLocaleString('en', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+          <td><span class="badge badge-${pr.priority}">${pr.priority}</span></td>
+          <td>
+            <span class="status-badge status-${statusClass}">
+              <span class="status-dot"></span>${pr.status}
+            </span>
+          </td>
+          <td style="text-align:center">
+            <span class="${pr.emailSent ? 'check-yes' : 'check-no'}">${pr.emailSent ? '✅' : '○'}</span>
+          </td>
+          <td style="text-align:center">
+            <span class="${pr.slackNotified ? 'check-yes' : 'check-no'}">${pr.slackNotified ? '✅' : '○'}</span>
+          </td>
+          <td onclick="event.stopPropagation()">
+            <div class="action-btns">
+              <button class="act-btn" title="View" onclick="openModal('${pr.id}')">👁</button>
+              <button class="act-btn" title="Print" onclick="printSingle('${pr.id}')">🖨</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    updateKPIs(filteredPRs);
+  }
+
+  function sortTable(key) {
+    if (sortKey === key) sortAsc = !sortAsc;
+    else { sortKey = key; sortAsc = true; }
+    applyFilters();
+  }
+
+  function clearFilters() {
+    document.getElementById('filterDept').value = '';
+    document.getElementById('filterPriority').value = '';
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('filterSearch').value = '';
+    applyFilters();
+  }
+
+  // ── MODAL ──
+  function openModal(id) {
+    currentPR = allPRs.find(p => p.id === id);
+    if (!currentPR) return;
+    document.getElementById('modalPRNum').textContent = currentPR.prNumber;
+    
+    let htmlContent = buildPRHTML(currentPR);
+
+    // Injects direct manager approval action control loops natively into preview frames
+    if (currentPR.status === 'New' || currentPR.status === 'InProgress') {
+      htmlContent += `
+        <div class="pr-section-label" style="margin-top:24px; border-color:var(--gold); color:var(--gold)">Manager Governance Authorization</div>
+        <div style="display:flex; gap:12px; margin-top:14px; padding-bottom:12px;">
+          <button onclick="updatePRStatus('${currentPR.id}', 'Approved')" style="flex:1; background:var(--green); color:white; border:none; padding:12px; border-radius:6px; font-weight:700; cursor:pointer; font-family:'Inter'; font-size:11px; letter-spacing:1px; text-transform:uppercase;">🟩 Approve Request</button>
+          <button onclick="updatePRStatus('${currentPR.id}', 'Rejected')" style="flex:1; background:var(--red); color:white; border:none; padding:12px; border-radius:6px; font-weight:700; cursor:pointer; font-family:'Inter'; font-size:11px; letter-spacing:1px; text-transform:uppercase;">🟥 Reject Request</button>
+        </div>
+      `;
+    }
+
+    document.getElementById('modalBody').innerHTML = htmlContent;
+    document.getElementById('prModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    document.getElementById('prModal').classList.remove('show');
+    document.body.style.overflow = '';
+    currentPR = null;
+  }
+
+  function buildPRHTML(pr) {
+    const itemRows = (pr.items || []).map(item => `
+      <tr>
+        <td style="text-align:center;font-weight:600;color:var(--primary)">${item.no}</td>
+        <td>${item.group}</td>
+        <td>${item.article}</td>
+        <td style="text-align:center">${item.qty}</td>
+        <td style="text-align:center">${item.unit}</td>
+        <td style="text-align:right">SAR ${parseFloat(item.price || 0).toFixed(2)}</td>
+        <td style="text-align:right;font-weight:600;color:var(--primary)">${item.total}</td>
+        <td style="text-align:center">${item.dateWanted}</td>
+        <td style="text-align:center">${item.soh}</td>
+        <td>${item.notes || '—'}</td>
+      </tr>
+    `).join('');
+
+    const priorityBadge = `<span class="badge badge-${pr.priority}">${pr.priority}</span>`;
+    const statusClass = pr.status.replace(/\s/g, '');
+
+    return `
+      <div class="pr-preview-header">
+        <div>
+          <div class="pr-hotel-name">Park Inn by Radisson</div>
+          <div class="pr-hotel-sub">Makkah, Saudi Arabia · Procurement Department</div>
+        </div>
+        <div class="pr-doc-right">
+          <div class="pr-doc-title">Purchase Requisition</div>
+          <div class="pr-doc-number">${pr.prNumber}</div>
+          <div class="pr-doc-date">Date: ${pr.submittedAt}</div>
+        </div>
+      </div>
+
+      <div class="pr-section-label">Request Details</div>
+      <div class="pr-meta-grid">
+        <div><div class="pr-meta-label">Requester Name</div><div class="pr-meta-value">${pr.requesterName}</div></div>
+        <div><div class="pr-meta-label">Requester Email</div><div class="pr-meta-value">${pr.requesterEmail}</div></div>
+        <div><div class="pr-meta-label">Department</div><div class="pr-meta-value">${pr.department}</div></div>
+        <div><div class="pr-meta-label">Delivery Location</div><div class="pr-meta-value">${pr.deliveryLocation}</div></div>
+        <div><div class="pr-meta-label">Delivery Date</div><div class="pr-meta-value">${pr.deliveryDate}</div></div>
+        <div><div class="pr-meta-label">Priority</div><div class="pr-meta-value">${priorityBadge}</div></div>
+        <div><div class="pr-meta-label">Status</div>
+          <div class="pr-meta-value">
+            <span class="status-badge status-${statusClass}">
+              <span class="status-dot"></span>${pr.status}
+            </span>
+          </div>
+        </div>
+        <div><div class="pr-meta-label">Email Sent</div><div class="pr-meta-value">${pr.emailSent ? '✅ Yes' : '❌ No'}</div></div>
+        <div><div class="pr-meta-label">Slack Notified</div><div class="pr-meta-value">${pr.slackNotified ? '✅ Yes' : '❌ No'}</div></div>
+      </div>
+
+      <div class="pr-section-label">Line Items</div>
+      <table class="pr-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Item Group</th><th>Article</th>
+            <th>Qty</th><th>Unit</th><th>Last Price</th>
+            <th>Total</th><th>Date Wanted</th><th>SOH</th><th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>${itemRows}</tbody>
+        <tfoot>
+          <tr>
+            <td colspan="6" class="pr-total-label">Grand Total</td>
+            <td class="pr-total-value">SAR ${parseFloat(pr.grandTotal).toLocaleString('en', {minimumFractionDigits:2})}</td>
+            <td colspan="3"></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      ${pr.notes ? `
+      <div class="pr-section-label">Additional Notes</div>
+      <div class="pr-notes-box">${pr.notes}</div>` : ''}
+
+      <div class="pr-section-label">Authorisation & Signatures</div>
+      <div class="pr-sigs">
+        <div class="pr-sig"><div class="pr-sig-line"></div><div class="pr-sig-name">Department Head</div><div class="pr-sig-title">Requesting Authority</div></div>
+        <div class="pr-sig"><div class="pr-sig-line"></div><div class="pr-sig-name">Purchasing Manager</div><div class="pr-sig-title">Procurement Review</div></div>
+        <div class="pr-sig"><div class="pr-sig-line"></div><div class="pr-sig-name">Financial Controller</div><div class="pr-sig-title">Budget Approval</div></div>
+        <div class="pr-sig"><div class="pr-sig-line"></div><div class="pr-sig-name">General Manager</div><div class="pr-sig-title">Final Authorisation</div></div>
+      </div>
+
+      <div class="pr-footer-strip">
+        <div class="pr-footer-text">
+          System generated · Park Inn by Radisson, Makkah<br>
+          ${pr.prNumber} · Generated: ${new Date().toLocaleDateString('en-GB')}
+        </div>
+        <div class="pr-footer-stamp">Confidential · Internal Use Only</div>
+      </div>
+    `;
+  }
+
+  function previewPR() {
+    if (!currentPR) return;
+    printSingle(currentPR.id, true);
+  }
+
+  function printSingle(id, preview = false) {
+    const pr = allPRs.find(p => p.id === id);
+    if (!pr) return;
+    const content = buildPRHTML(pr);
+    const win = window.open('', '_blank', 'width=900,height=700');
+    win.document.write(`<!DOCTYPE html><html><head>
+      <meta charset="UTF-8">
+      <title>${pr.prNumber} — Purchase Requisition</title>
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        * { margin:0;padding:0;box-sizing:border-box; }
+        :root { --primary:#1B3A5C;--gold:#C9A84C;--red:#C0392B;--green:#27AE60;--gray-50:#F8F9FA;--gray-400:#9BA5B4;--gray-600:#5A6478;--gray-800:#2D3748;--border:#DDE2EA; }
+        body { font-family:'Inter',sans-serif;padding:28px;color:var(--gray-800); }
+        .pr-preview-header { border-bottom:3px solid var(--primary);padding-bottom:14px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:flex-start; }
+        .pr-hotel-name { font-size:18px;font-weight:700;color:var(--primary); }
+        .pr-hotel-sub { font-size:10px;color:var(--gray-400);margin-top:2px; }
+        .pr-doc-right { text-align:right; }
+        .pr-doc-title { font-size:14px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:1px; }
+        .pr-doc-number { font-size:13px;font-weight:600;color:var(--gold);margin-top:3px; }
+        .pr-doc-date { font-size:10px;color:var(--gray-400);margin-top:2px; }
+        .pr-section-label { font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--primary);border-bottom:1.5px solid var(--primary);padding-bottom:4px;margin-bottom:10px; }
+        .pr-meta-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:10px;background:var(--gray-50);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:16px; }
+        .pr-meta-label { font-size:9px;font-weight:700;color:var(--gray-400);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px; }
+        .pr-meta-value { font-size:12px;font-weight:500; }
+        .pr-table { width:100%;border-collapse:collapse;font-size:11px;margin-bottom:16px; }
+        .pr-table thead tr { background:var(--primary); }
+        .pr-table thead th { padding:7px 8px;color:rgba(255,255,255,0.9);font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;text-align:left; }
+        .pr-table tbody td { padding:7px 8px;border-bottom:1px solid var(--border); }
+        .pr-table tbody tr:nth-child(even) td { background:var(--gray-50); }
+        .pr-table tfoot td { padding:9px 8px;border-top:2px solid var(--primary);font-weight:700;font-size:13px; }
+        .pr-total-label { text-align:right;color:var(--gray-600);font-size:10px;letter-spacing:1px;text-transform:uppercase; }
+        .pr-total-value { color:var(--primary); }
+        .pr-notes-box { background:var(--gray-50);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:11px;color:var(--gray-600);margin-bottom:16px;line-height:1.7; }
+        .pr-sigs { display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:6px;margin-bottom:16px; }
+        .pr-sig { text-align:center; }
+        .pr-sig-line { height:44px;border-bottom:1.5px solid var(--gray-400);margin-bottom:6px; }
+        .pr-sig-name { font-size:10px;font-weight:600;color:var(--gray-600); }
+        .pr-sig-title { font-size:9px;color:var(--gray-400);margin-top:1px; }
+        .pr-footer-strip { border-top:1px solid var(--border);padding-top:10px;display:flex;justify-content:space-between; }
+        .pr-footer-text { font-size:9px;color:var(--gray-400);line-height:1.6; }
+        .pr-footer-stamp { font-size:9px;color:var(--gray-400);letter-spacing:1px;text-transform:uppercase; }
+        .badge { display:inline-block;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:1px; }
+        .badge-HIGH { background:#FDECEA;color:#C0392B; }
+        .badge-MEDIUM { background:#FDEBD0;color:#8B4513; }
+        .badge-LOW { background:#D4EDDA;color:#155724; }
+        .status-badge { display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px; }
+        .status-dot { width:5px;height:5px;border-radius:50%; }
+        .status-New { background:#EBF4FF;color:#1A3A5C; }
+        .status-New .status-dot { background:#1B3A5C; }
+        .status-Approved { background:#D4EDDA;color:#155724; }
+        .status-Approved .status-dot { background:#27AE60; }
+        .status-InProgress { background:#FEF3CD;color:#8B6914; }
+        .status-InProgress .status-dot { background:#C9A84C; }
+        .status-Rejected { background:#FDECEA;color:#C0392B; }
+        .status-Rejected .status-dot { background:#C0392B; }
+        @media print { body { padding:16px; } @page { margin:1cm;size:A4; } }
+      </style>
+      </head><body>${content}</body></html>`);
+    win.document.close();
+    win.focus();
+    if (!preview) setTimeout(() => win.print(), 500);
+  }
+
+  function printPR() {
+    if (currentPR) printSingle(currentPR.id);
+  }
+
+  // ── EXPORT CSV ──
+  function exportCSV() {
+    const headers = ['PR Number','Date','Requester','Email','Department','Delivery Location','Delivery Date','Priority','Status','Grand Total','Email Sent','Slack Notified','Notes'];
+    const rows = filteredPRs.map(pr => [
+      pr.prNumber, pr.submittedAt, pr.requesterName, pr.requesterEmail,
+      pr.department, pr.deliveryLocation, pr.deliveryDate,
+      pr.priority, pr.status, pr.grandTotal,
+      pr.emailSent ? 'Yes' : 'No',
+      pr.slackNotified ? 'Yes' : 'No',
+      (pr.notes || '').replace(/,/g, ';')
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `PR_Export_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  }
+
+  document.getElementById('prModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  // ── INIT ──
+  setTopbarDate();
+  fetchLivePRs(); // Dynamic initial fetch trigger
+</script>
+</body>
+</html>
