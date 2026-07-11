@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PM Dashboard — Park Inn Procurement</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap');
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -588,14 +588,6 @@
 
   .btn-print-modal:hover { background: var(--primary-light); }
 
-  .btn-preview-modal {
-    background: none;
-    color: var(--primary);
-    border-color: var(--primary);
-  }
-
-  .btn-preview-modal:hover { background: var(--primary); color: var(--white); }
-
   /* Modal Content */
   .modal-body { padding: 24px; }
 
@@ -776,6 +768,14 @@
     .pr-meta-grid { grid-template-columns: repeat(2, 1fr); }
     .pr-sigs { grid-template-columns: repeat(2, 1fr); }
   }
+
+  /* Print Override Stylings */
+  @media print {
+    body * { visibility: hidden; }
+    #prModal, #prModal *, #modalBody, #modalBody * { visibility: visible; }
+    #prModal { position: absolute; left: 0; top: 0; width: 100%; background: white; }
+    .modal-bar, .pr-section-label[style*="border-color:var(--gold)"], div[style*="display:flex; gap:12px;"] { display: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -791,8 +791,7 @@
       </div>
       <div class="modal-bar-actions">
         <button class="modal-action-btn btn-close-modal" onclick="closeModal()">✕ Close</button>
-        <button class="modal-action-btn btn-preview-modal" onclick="previewPR()">👁 Preview</button>
-        <button class="modal-action-btn btn-print-modal" onclick="printPR()">🖨 Print</button>
+        <button class="modal-action-btn btn-print-modal" onclick="printPR()">🖨 Print PR</button>
       </div>
     </div>
     <div class="modal-body" id="modalBody"></div>
@@ -926,8 +925,8 @@
   let sortKey = 'submittedAt';
   let sortAsc = false;
 
-  // ⚠️ CONNECT LIVE WEBHOOK DOMAIN HERE (Omit trailing slash)
- const N8N_BASE_URL = "https://n8n.srv1106977.hstgr.cloud/webhook/get-prs";
+  // ✅ GLOBAL CONFIG: Points cleanly to the production base directory path
+  const N8N_BASE_URL = "https://n8n.srv1106977.hstgr.cloud/webhook";
 
   // ── TOPBAR DATE ──
   function setTopbarDate() {
@@ -991,11 +990,6 @@
     document.getElementById('kpiApproved').textContent = data.filter(p => p.status === 'Approved').length;
     const total = data.reduce((s, p) => s + parseFloat(p.grandTotal || 0), 0);
     document.getElementById('kpiTotal2').textContent = total.toLocaleString('en', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-  }
-
-  // ── RENDER TABLE ──
-  function renderTable() {
-    applyFilters();
   }
 
   function applyFilters() {
@@ -1068,8 +1062,8 @@
           </td>
           <td onclick="event.stopPropagation()">
             <div class="action-btns">
-              <button class="act-btn" title="View" onclick="openModal('${pr.id}')">👁</button>
-              <button class="act-btn" title="Print" onclick="printSingle('${pr.id}')">🖨</button>
+              <button class="act-btn" title="View Detail" onclick="openModal('${pr.id}')">👁</button>
+              <button class="act-btn" title="Print Directly" onclick="printSingle('${pr.id}')">🖨</button>
             </div>
           </td>
         </tr>
@@ -1093,7 +1087,7 @@
     applyFilters();
   }
 
-  // ── MODAL ──
+  // ── MODAL WINDOW SYSTEM ──
   function openModal(id) {
     currentPR = allPRs.find(p => p.id === id);
     if (!currentPR) return;
@@ -1101,7 +1095,6 @@
     
     let htmlContent = buildPRHTML(currentPR);
 
-    // Injects direct manager approval action control loops natively into preview frames
     if (currentPR.status === 'New' || currentPR.status === 'InProgress') {
       htmlContent += `
         <div class="pr-section-label" style="margin-top:24px; border-color:var(--gold); color:var(--gold)">Manager Governance Authorization</div>
@@ -1118,6 +1111,7 @@
   }
 
   function closeModal() {
+    document.getElementById('prModal').classList.remove('remove');
     document.getElementById('prModal').classList.remove('show');
     document.body.style.overflow = '';
     currentPR = null;
@@ -1139,184 +1133,92 @@
       </tr>
     `).join('');
 
-    const priorityBadge = `<span class="badge badge-${pr.priority}">${pr.priority}</span>`;
-    const statusClass = pr.status.replace(/\s/g, '');
-
     return `
       <div class="pr-preview-header">
         <div>
           <div class="pr-hotel-name">Park Inn by Radisson</div>
-          <div class="pr-hotel-sub">Makkah, Saudi Arabia · Procurement Department</div>
+          <div class="pr-hotel-sub">Al Khobar, Kingdom of Saudi Arabia</div>
         </div>
         <div class="pr-doc-right">
           <div class="pr-doc-title">Purchase Requisition</div>
           <div class="pr-doc-number">${pr.prNumber}</div>
-          <div class="pr-doc-date">Date: ${pr.submittedAt}</div>
+          <div class="pr-doc-date">Date Submitted: ${pr.submittedAt}</div>
         </div>
       </div>
-
-      <div class="pr-section-label">Request Details</div>
       <div class="pr-meta-grid">
-        <div><div class="pr-meta-label">Requester Name</div><div class="pr-meta-value">${pr.requesterName}</div></div>
-        <div><div class="pr-meta-label">Requester Email</div><div class="pr-meta-value">${pr.requesterEmail}</div></div>
         <div><div class="pr-meta-label">Department</div><div class="pr-meta-value">${pr.department}</div></div>
-        <div><div class="pr-meta-label">Delivery Location</div><div class="pr-meta-value">${pr.deliveryLocation}</div></div>
-        <div><div class="pr-meta-label">Delivery Date</div><div class="pr-meta-value">${pr.deliveryDate}</div></div>
-        <div><div class="pr-meta-label">Priority</div><div class="pr-meta-value">${priorityBadge}</div></div>
-        <div><div class="pr-meta-label">Status</div>
-          <div class="pr-meta-value">
-            <span class="status-badge status-${statusClass}">
-              <span class="status-dot"></span>${pr.status}
-            </span>
-          </div>
-        </div>
-        <div><div class="pr-meta-label">Email Sent</div><div class="pr-meta-value">${pr.emailSent ? '✅ Yes' : '❌ No'}</div></div>
-        <div><div class="pr-meta-label">Slack Notified</div><div class="pr-meta-value">${pr.slackNotified ? '✅ Yes' : '❌ No'}</div></div>
+        <div><div class="pr-meta-label">Requester</div><div class="pr-meta-value">${pr.requesterName}</div></div>
+        <div><div class="pr-meta-label">Priority Level</div><div class="pr-meta-value"><span class="badge badge-${pr.priority}">${pr.priority}</span></div></div>
+        <div><div class="pr-meta-label">Target Delivery</div><div class="pr-meta-value">${pr.deliveryDate}</div></div>
+        <div><div class="pr-meta-label">Location Point</div><div class="pr-meta-value">${pr.deliveryLocation}</div></div>
+        <div><div class="pr-meta-label">Current Status</div><div class="pr-meta-value">${pr.status}</div></div>
       </div>
-
-      <div class="pr-section-label">Line Items</div>
+      <div class="pr-section-label">Itemized Requirements Breakdown</div>
       <table class="pr-table">
         <thead>
           <tr>
-            <th>#</th><th>Item Group</th><th>Article</th>
-            <th>Qty</th><th>Unit</th><th>Last Price</th>
-            <th>Total</th><th>Date Wanted</th><th>SOH</th><th>Notes</th>
+            <th style="width:40px;text-align:center">#</th>
+            <th>Category</th>
+            <th>Item Description</th>
+            <th style="text-align:center">Qty</th>
+            <th style="text-align:center">Unit</th>
+            <th style="text-align:right">Last Price</th>
+            <th style="text-align:right">Total</th>
+            <th style="text-align:center">Required</th>
+            <th style="text-align:center">SOH</th>
+            <th>Item Notes</th>
           </tr>
         </thead>
         <tbody>${itemRows}</tbody>
         <tfoot>
           <tr>
-            <td colspan="6" class="pr-total-label">Grand Total</td>
+            <td colspan="6" class="pr-total-label">Grand Total Estimated Outlay:</td>
             <td class="pr-total-value">SAR ${parseFloat(pr.grandTotal).toLocaleString('en', {minimumFractionDigits:2})}</td>
             <td colspan="3"></td>
           </tr>
         </tfoot>
       </table>
-
-      ${pr.notes ? `
-      <div class="pr-section-label">Additional Notes</div>
-      <div class="pr-notes-box">${pr.notes}</div>` : ''}
-
-      <div class="pr-section-label">Authorisation & Signatures</div>
-      <div class="pr-sigs">
-        <div class="pr-sig"><div class="pr-sig-line"></div><div class="pr-sig-name">Department Head</div><div class="pr-sig-title">Requesting Authority</div></div>
-        <div class="pr-sig"><div class="pr-sig-line"></div><div class="pr-sig-name">Purchasing Manager</div><div class="pr-sig-title">Procurement Review</div></div>
-        <div class="pr-sig"><div class="pr-sig-line"></div><div class="pr-sig-name">Financial Controller</div><div class="pr-sig-title">Budget Approval</div></div>
-        <div class="pr-sig"><div class="pr-sig-line"></div><div class="pr-sig-name">General Manager</div><div class="pr-sig-title">Final Authorisation</div></div>
+      <div class="pr-notes-box">
+        <strong>Justification Summary / Procurement Notes:</strong>
+        ${pr.notes || 'No standard additional remarks provided for this requisition set.'}
       </div>
-
-      <div class="pr-footer-strip">
-        <div class="pr-footer-text">
-          System generated · Park Inn by Radisson, Makkah<br>
-          ${pr.prNumber} · Generated: ${new Date().toLocaleDateString('en-GB')}
-        </div>
-        <div class="pr-footer-stamp">Confidential · Internal Use Only</div>
+      <div class="pr-section-label">Authorization Routing Matrix</div>
+      <div class="pr-sigs">
+        <div class="pr-sig"><div class="pr-sig-line"></div><div class="pr-sig-name">${pr.requesterName}</div><div class="pr-sig-title">Department Head Sign-Off</div></div>
+        <div class="pr-sig"><div class="pr-sig-line"></div><div class="pr-sig-name">Authorized</div><div class="pr-sig-title">Materials Procurement Manager</div></div>
+        <div class="pr-sig"><div class="pr-sig-line"></div><div class="pr-sig-name">Verified</div><div class="pr-sig-title">Director of Finance Control</div></div>
+        <div class="pr-sig"><div class="pr-sig-line"></div><div class="pr-sig-name">Approved</div><div class="pr-sig-title">Hotel General Manager</div></div>
       </div>
     `;
   }
 
-  function previewPR() {
-    if (!currentPR) return;
-    printSingle(currentPR.id, true);
+  function printPR() { window.print(); }
+  
+  function printSingle(id) {
+    openModal(id);
+    setTimeout(() => { window.print(); }, 400);
   }
 
-  function printSingle(id, preview = false) {
-    const pr = allPRs.find(p => p.id === id);
-    if (!pr) return;
-    const content = buildPRHTML(pr);
-    const win = window.open('', '_blank', 'width=900,height=700');
-    win.document.write(`<!DOCTYPE html><html><head>
-      <meta charset="UTF-8">
-      <title>${pr.prNumber} — Purchase Requisition</title>
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        * { margin:0;padding:0;box-sizing:border-box; }
-        :root { --primary:#1B3A5C;--gold:#C9A84C;--red:#C0392B;--green:#27AE60;--gray-50:#F8F9FA;--gray-400:#9BA5B4;--gray-600:#5A6478;--gray-800:#2D3748;--border:#DDE2EA; }
-        body { font-family:'Inter',sans-serif;padding:28px;color:var(--gray-800); }
-        .pr-preview-header { border-bottom:3px solid var(--primary);padding-bottom:14px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:flex-start; }
-        .pr-hotel-name { font-size:18px;font-weight:700;color:var(--primary); }
-        .pr-hotel-sub { font-size:10px;color:var(--gray-400);margin-top:2px; }
-        .pr-doc-right { text-align:right; }
-        .pr-doc-title { font-size:14px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:1px; }
-        .pr-doc-number { font-size:13px;font-weight:600;color:var(--gold);margin-top:3px; }
-        .pr-doc-date { font-size:10px;color:var(--gray-400);margin-top:2px; }
-        .pr-section-label { font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--primary);border-bottom:1.5px solid var(--primary);padding-bottom:4px;margin-bottom:10px; }
-        .pr-meta-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:10px;background:var(--gray-50);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:16px; }
-        .pr-meta-label { font-size:9px;font-weight:700;color:var(--gray-400);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px; }
-        .pr-meta-value { font-size:12px;font-weight:500; }
-        .pr-table { width:100%;border-collapse:collapse;font-size:11px;margin-bottom:16px; }
-        .pr-table thead tr { background:var(--primary); }
-        .pr-table thead th { padding:7px 8px;color:rgba(255,255,255,0.9);font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;text-align:left; }
-        .pr-table tbody td { padding:7px 8px;border-bottom:1px solid var(--border); }
-        .pr-table tbody tr:nth-child(even) td { background:var(--gray-50); }
-        .pr-table tfoot td { padding:9px 8px;border-top:2px solid var(--primary);font-weight:700;font-size:13px; }
-        .pr-total-label { text-align:right;color:var(--gray-600);font-size:10px;letter-spacing:1px;text-transform:uppercase; }
-        .pr-total-value { color:var(--primary); }
-        .pr-notes-box { background:var(--gray-50);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:11px;color:var(--gray-600);margin-bottom:16px;line-height:1.7; }
-        .pr-sigs { display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:6px;margin-bottom:16px; }
-        .pr-sig { text-align:center; }
-        .pr-sig-line { height:44px;border-bottom:1.5px solid var(--gray-400);margin-bottom:6px; }
-        .pr-sig-name { font-size:10px;font-weight:600;color:var(--gray-600); }
-        .pr-sig-title { font-size:9px;color:var(--gray-400);margin-top:1px; }
-        .pr-footer-strip { border-top:1px solid var(--border);padding-top:10px;display:flex;justify-content:space-between; }
-        .pr-footer-text { font-size:9px;color:var(--gray-400);line-height:1.6; }
-        .pr-footer-stamp { font-size:9px;color:var(--gray-400);letter-spacing:1px;text-transform:uppercase; }
-        .badge { display:inline-block;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:1px; }
-        .badge-HIGH { background:#FDECEA;color:#C0392B; }
-        .badge-MEDIUM { background:#FDEBD0;color:#8B4513; }
-        .badge-LOW { background:#D4EDDA;color:#155724; }
-        .status-badge { display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px; }
-        .status-dot { width:5px;height:5px;border-radius:50%; }
-        .status-New { background:#EBF4FF;color:#1A3A5C; }
-        .status-New .status-dot { background:#1B3A5C; }
-        .status-Approved { background:#D4EDDA;color:#155724; }
-        .status-Approved .status-dot { background:#27AE60; }
-        .status-InProgress { background:#FEF3CD;color:#8B6914; }
-        .status-InProgress .status-dot { background:#C9A84C; }
-        .status-Rejected { background:#FDECEA;color:#C0392B; }
-        .status-Rejected .status-dot { background:#C0392B; }
-        @media print { body { padding:16px; } @page { margin:1cm;size:A4; } }
-      </style>
-      </head><body>${content}</body></html>`);
-    win.document.close();
-    win.focus();
-    if (!preview) setTimeout(() => win.print(), 500);
-  }
-
-  function printPR() {
-    if (currentPR) printSingle(currentPR.id);
-  }
-
-  // ── EXPORT CSV ──
   function exportCSV() {
-    const headers = ['PR Number','Date','Requester','Email','Department','Delivery Location','Delivery Date','Priority','Status','Grand Total','Email Sent','Slack Notified','Notes'];
-    const rows = filteredPRs.map(pr => [
-      pr.prNumber, pr.submittedAt, pr.requesterName, pr.requesterEmail,
-      pr.department, pr.deliveryLocation, pr.deliveryDate,
-      pr.priority, pr.status, pr.grandTotal,
-      pr.emailSent ? 'Yes' : 'No',
-      pr.slackNotified ? 'Yes' : 'No',
-      (pr.notes || '').replace(/,/g, ';')
-    ]);
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `PR_Export_${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
+    if(filteredPRs.length === 0) return;
+    let csv = 'PR Number,Date,Requester,Department,Total Value (SAR),Priority,Status\n';
+    filteredPRs.forEach(p => {
+      csv += `"${p.prNumber}","${p.submittedAt}","${p.requesterName}","${p.department}",${p.grandTotal},"${p.priority}","${p.status}"\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `Procurement_PR_Export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
-  document.getElementById('prModal').addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
-  });
-
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeModal();
-  });
-
-  // ── INIT ──
-  setTopbarDate();
-  fetchLivePRs(); // Dynamic initial fetch trigger
+  // ── INIT RUNNERS ──
+  window.onload = function() {
+    setTopbarDate();
+    fetchLivePRs();
+  };
 </script>
 </body>
 </html>
