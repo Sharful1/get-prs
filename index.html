@@ -926,7 +926,7 @@
   let sortAsc = false;
 
   // ✅ GLOBAL CONFIG: Points cleanly to the production base directory path
-  const N8N_BASE_URL = "https://n8n.srv1106977.hstgr.cloud/webhook";
+  const = "https://n8n.srv1106977.hstgr.cloud/webhook-test/get-prs";
 
   // ── TOPBAR DATE ──
   function setTopbarDate() {
@@ -941,7 +941,7 @@
     try {
       if (refreshBtn) refreshBtn.textContent = "⏳ Loading...";
       
-      const response = await fetch(`${N8N_BASE_URL}/get-prs`, {
+      const response = await fetch(`${https://n8n.srv1106977.hstgr.cloud/webhook-test/get-prs}/get-prs`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' }
       });
