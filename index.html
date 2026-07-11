@@ -891,326 +891,65 @@
 </div>
 
 <script>
-  // ── DATA PARSING CONTEXT ──
-  let allPRs = [];
-  let filteredPRs = [];
-  let currentPR = null;
-  let sortKey = 'submittedAt';
-  let sortAsc = false;
+// ── DATA PARSING CONTEXT ──
+let allPRs = [];
+let filteredPRs = [];
+let currentPR = null;
+let sortKey = 'submittedAt';
+let sortAsc = false;
 
-  // GLOBAL CONFIG: Points to the webhook base folder
-  const N8N_BASE_URL = "https://n8n.srv1106977.hstgr.cloud/webhook-test/get-prs";
+// ⚠️ CONNECT LIVE WEBHOOK DOMAIN HERE (Omit trailing slash)
+// Currently set to testing. Change to "/webhook" when you activate the workflow in n8n.
+const N8N_BASE_URL = "https://n8n.srv1106977.hstgr.cloud/webhook-test";
 
-  // ── TOPBAR DATE ──
-  function setTopbarDate() {
-    const now = new Date();
-    const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
-    document.getElementById('topbarDate').textContent = now.toLocaleDateString('en-GB', opts);
-  }
-
-  // ── ROUTE 1: DATA FETCH ──
-  async function fetchLivePRs() {
-    const refreshBtn = document.querySelector('.refresh-btn');
-    try {
-      if (refreshBtn) refreshBtn.textContent = "⏳ Loading...";
-      
-      const response = await fetch(`${N8N_BASE_URL}/get-prs`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
-      
-      if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-      
-      const incomingData = await response.json();
-      // Ensure data is always treated safely as an array
-      allPRs = Array.isArray(incomingData) ? incomingData : [];
-      applyFilters();
-    } catch (error) {
-      console.error("Dashboard engine failed to pull data:", error);
-      alert("Backend connection error. Verify your n8n GET webhook is live and active.");
-    } finally {
-      if (refreshBtn) refreshBtn.textContent = "↻ Refresh";
+// ── TOPBAR DATE ──
+function setTopbarDate() {
+    const dateElement = document.getElementById('topbar-date');
+    if (dateElement) {
+        const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+        dateElement.textContent = new Date().toLocaleDateString('en-US', options);
     }
-  }
+}
 
-  // ── ROUTE 2: TRANSACTION STATUS UPDATE ──
-  async function updatePRStatus(airtableRecordId, newStatus) {
-    try {
-      const response = await fetch(`${N8N_BASE_URL}/update-status`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: airtableRecordId, status: newStatus })
-      });
-
-      if (!response.ok) throw new Error("Status commit request failed.");
-
-      const toast = document.getElementById('toast');
-      toast.textContent = `✅ PR Status successfully changed to ${newStatus}!`;
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 3000);
-      
-      closeModal();
-      fetchLivePRs();
-    } catch (error) {
-      console.error("Status transaction aborted:", error);
-      alert("Failed to modify record status. Verify your n8n POST webhook configurations.");
-    }
-  }
-
-  // ── KPI UPDATER ──
-  function updateKPIs(data) {
-    document.getElementById('kpiTotal').textContent = data.length;
-    document.getElementById('kpiHigh').textContent = data.filter(p => (p.priority || '') === 'HIGH').length;
-    document.getElementById('kpiPending').textContent = data.filter(p => (p.status || '') === 'New').length;
-    document.getElementById('kpiApproved').textContent = data.filter(p => (p.status || '') === 'Approved').length;
-    const total = data.reduce((s, p) => s + parseFloat(p.grandTotal || 0), 0);
-    document.getElementById('kpiTotal2').textContent = total.toLocaleString('en', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-  }
-
-  // ── CRASH-PROOF FILTER ENGINE ──
-  function applyFilters() {
-    const dept = document.getElementById('filterDept').value;
-    const priority = document.getElementById('filterPriority').value;
-    const status = document.getElementById('filterStatus').value;
-    const search = document.getElementById('filterSearch').value.toLowerCase();
-
-    filteredPRs = allPRs.filter(pr => {
-      // Safe fallback formatting to prevent empty string property extraction crashes
-      const prNumberStr = (pr.prNumber || '').toLowerCase();
-      const requesterStr = (pr.requesterName || '').toLowerCase();
-      const deptStr = (pr.department || '').toLowerCase();
-      const prPriority = pr.priority || 'MEDIUM';
-      const prStatus = pr.status || 'New';
-
-      const matchDept = !dept || pr.department === dept;
-      const matchPriority = !priority || prPriority === priority;
-      const matchStatus = !status || prStatus === status;
-      
-      const matchSearch = !search ||
-        prNumberStr.includes(search) ||
-        requesterStr.includes(search) ||
-        deptStr.includes(search) ||
-        (pr.items && Array.isArray(pr.items) && pr.items.some(i => (i.article || '').toLowerCase().includes(search)));
-        
-      return matchDept && matchPriority && matchStatus && matchSearch;
-    });
-
-    // Safe Sort Operation
-    filteredPRs.sort((a, b) => {
-      let va = a[sortKey] || '';
-      let vb = b[sortKey] || '';
-      if (sortKey === 'grandTotal') { va = parseFloat(va || 0); vb = parseFloat(vb || 0); }
-      if (va < vb) return sortAsc ? -1 : 1;
-      if (va > vb) return sortAsc ? 1 : -1;
-      return 0;
-    });
-
-    const tbody = document.getElementById('prTableBody');
-    const empty = document.getElementById('emptyState');
-
-    if (filteredPRs.length === 0) {
-      tbody.innerHTML = '';
-      empty.style.display = 'block';
-      document.getElementById('tableCount').textContent = 'Showing 0 records';
-      updateKPIs(filteredPRs);
-      return;
-    }
-
-    empty.style.display = 'none';
-    document.getElementById('tableCount').textContent = `Showing ${filteredPRs.length} of ${allPRs.length} records`;
-
-    tbody.innerHTML = filteredPRs.map(pr => {
-      const itemSummary = pr.items && Array.isArray(pr.items) && pr.items.length > 0
-        ? pr.items.map(i => `${i.article || 'Item'} ×${i.qty || 1}`).join(', ')
-        : '—';
-
-      const currentStatus = pr.status || 'New';
-      const statusClass = currentStatus.replace(/\s/g, '');
-      const priorityVal = pr.priority || 'MEDIUM';
-      const grandTotalVal = parseFloat(pr.grandTotal || 0);
-
-      return `
-        <tr onclick="openModal('${pr.id}')">
-          <td class="td-pr">${pr.prNumber || '—'}</td>
-          <td class="td-date">${pr.submittedAt || '—'}</td>
-          <td class="td-name">${pr.requesterName || '—'}</td>
-          <td class="td-dept">${pr.department || '—'}</td>
-          <td class="td-items" title="${itemSummary}">${itemSummary}</td>
-          <td class="td-total">SAR ${grandTotalVal.toLocaleString('en', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-          <td><span class="badge badge-${priorityVal}">${priorityVal}</span></td>
-          <td>
-            <span class="status-badge status-${statusClass}">
-              <span class="status-dot"></span>${currentStatus}
-            </span>
-          </td>
-          <td style="text-align:center">
-            <span class="${pr.emailSent ? 'check-yes' : 'check-no'}">${pr.emailSent ? '✅' : '○'}</span>
-          </td>
-          <td style="text-align:center">
-            <span class="${pr.slackNotified ? 'check-yes' : 'check-no'}">${pr.slackNotified ? '✅' : '○'}</span>
-          </td>
-          <td onclick="event.stopPropagation()">
-            <div class="action-btns">
-              <button class="act-btn" title="View Detail" onclick="openModal('${pr.id}')">👁</button>
-              <button class="act-btn" title="Print Directly" onclick="printSingle('${pr.id}')">🖨</button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
-
-    updateKPIs(filteredPRs);
-  }
-
-  function sortTable(key) {
-    if (sortKey === key) sortAsc = !sortAsc;
-    else { sortKey = key; sortAsc = true; }
-    applyFilters();
-  }
-
-  function clearFilters() {
-    document.getElementById('filterDept').value = '';
-    document.getElementById('filterPriority').value = '';
-    document.getElementById('filterStatus').value = '';
-    document.getElementById('filterSearch').value = '';
-    applyFilters();
-  }
-
-  // ── MODAL WINDOW SYSTEM ──
-  function openModal(id) {
-    currentPR = allPRs.find(p => p.id === id);
-    if (!currentPR) return;
-    document.getElementById('modalPRNum').textContent = currentPR.prNumber || '';
+// ── ROUTE 1: DATA FETCH ──
+async function fetchLivePRs() {
+  const refreshBtn = document.querySelector('.refresh-btn');
+  try {
+    if (refreshBtn) refreshBtn.textContent = "⏳ Loading...";
     
-    let htmlContent = buildPRHTML(currentPR);
-
-    if (currentPR.status === 'New' || currentPR.status === 'InProgress') {
-      htmlContent += `
-        <div class="pr-section-label" style="margin-top:24px; border-color:var(--gold); color:var(--gold)">Manager Governance Authorization</div>
-        <div style="display:flex; gap:12px; margin-top:14px; padding-bottom:12px;">
-          <button onclick="updatePRStatus('${currentPR.id}', 'Approved')" style="flex:1; background:var(--green); color:white; border:none; padding:12px; border-radius:6px; font-weight:700; cursor:pointer; font-family:'Inter'; font-size:11px; letter-spacing:1px; text-transform:uppercase;">🟩 Approve Request</button>
-          <button onclick="updatePRStatus('${currentPR.id}', 'Rejected')" style="flex:1; background:var(--red); color:white; border:none; padding:12px; border-radius:6px; font-weight:700; cursor:pointer; font-family:'Inter'; font-size:11px; letter-spacing:1px; text-transform:uppercase;">🟥 Reject Request</button>
-        </div>
-      `;
-    }
-
-    document.getElementById('modalBody').innerHTML = htmlContent;
-    document.getElementById('prModal').classList.add('show');
-    document.body.style.overflow = 'hidden';
-  }
-
-  // Fixed the syntax lookup mistake here (.remove target tracking)
-  function closeModal() {
-    document.getElementById('prModal').classList.remove('show');
-    document.body.style.overflow = '';
-    currentPR = null;
-  }
-
-  function buildPRHTML(pr) {
-    const itemRows = (pr.items || []).map(item => `
-      <tr>
-        <td style="text-align:center;font-weight:600;color:var(--primary)">${item.no || '—'}</td>
-        <td>${item.group || '—'}</td>
-        <td>${item.article || '—'}</td>
-        <td style="text-align:center">${item.qty || 0}</td>
-        <td style="text-align:center">${item.unit || 'Pcs'}</td>
-        <td style="text-align:right">SAR ${parseFloat(item.price || 0).toFixed(2)}</td>
-        <td style="text-align:right;font-weight:600;color:var(--primary)">${item.total || '0.00'}</td>
-        <td style="text-align:center">${item.dateWanted || '—'}</td>
-        <td style="text-align:center">${item.soh || 0}</td>
-        <td>${item.notes || '—'}</td>
-      </tr>
-    `).join('');
-
-    const priorityVal = pr.priority || 'MEDIUM';
-
-    return `
-      <div class="pr-preview-header">
-        <div>
-          <div class="pr-hotel-name">Park Inn by Radisson</div>
-          <div class="pr-hotel-sub">Al Khobar, Kingdom of Saudi Arabia</div>
-        </div>
-        <div class="pr-doc-right">
-          <div class="pr-doc-title">Purchase Requisition</div>
-          <div class="pr-doc-number">${pr.prNumber || '—'}</div>
-          <div class="pr-doc-date">Date Submitted: ${pr.submittedAt || '—'}</div>
-        </div>
-      </div>
-      <div class="pr-meta-grid">
-        <div><div class="pr-meta-label">Department</div><div class="pr-meta-value">${pr.department || '—'}</div></div>
-        <div><div class="pr-meta-label">Requester</div><div class="pr-meta-value">${pr.requesterName || '—'}</div></div>
-        <div><div class="pr-meta-label">Priority Level</div><div class="pr-meta-value"><span class="badge badge-${priorityVal}">${priorityVal}</span></div></div>
-        <div><div class="pr-meta-label">Target Delivery</div><div class="pr-meta-value">${pr.deliveryDate || '—'}</div></div>
-        <div><div class="pr-meta-label">Location Point</div><div class="pr-meta-value">${pr.deliveryLocation || '—'}</div></div>
-        <div><div class="pr-meta-label">Current Status</div><div class="pr-meta-value">${pr.status || 'New'}</div></div>
-      </div>
-      <div class="pr-section-label">Itemized Requirements Breakdown</div>
-      <table class="pr-table">
-        <thead>
-          <tr>
-            <th style="width:40px;text-align:center">#</th>
-            <th>Category</th>
-            <th>Item Description</th>
-            <th style="text-align:center">Qty</th>
-            <th style="text-align:center">Unit</th>
-            <th style="text-align:right">Last Price</th>
-            <th style="text-align:right">Total</th>
-            <th style="text-align:center">Required</th>
-            <th style="text-align:center">SOH</th>
-            <th>Item Notes</th>
-          </tr>
-        </thead>
-        <tbody>${itemRows}</tbody>
-        <tfoot>
-          <tr>
-            <td colspan="6" class="pr-total-label">Grand Total Estimated Outlay:</td>
-            <td class="pr-total-value">SAR ${parseFloat(pr.grandTotal || 0).toLocaleString('en', {minimumFractionDigits:2})}</td>
-            <td colspan="3"></td>
-          </tr>
-        </tfoot>
-      </table>
-      <div class="pr-notes-box">
-        <strong>Justification Summary / Procurement Notes:</strong>
-        ${pr.notes || 'No standard additional remarks provided for this requisition set.'}
-      </div>
-      <div class="pr-section-label">Authorization Routing Matrix</div>
-      <div class="pr-sigs">
-        <div class="pr-sig"><div class="pr-sig-line"></div><div class="pr-sig-name">${pr.requesterName || '—'}</div><div class="pr-sig-title">Department Head Sign-Off</div></div>
-        <div class="pr-sig"><div class="pr-sig-line"></div><div class="pr-sig-name">Authorized</div><div class="pr-sig-title">Materials Procurement Manager</div></div>
-        <div class="pr-sig"><div class="pr-sig-line"></div><div class="pr-sig-name">Verified</div><div class="pr-sig-title">Director of Finance Control</div></div>
-        <div class="pr-sig"><div class="pr-sig-line"></div><div class="pr-sig-name">Approved</div><div class="pr-sig-title">Hotel General Manager</div></div>
-      </div>
-    `;
-  }
-
-  function printPR() { window.print(); }
-  
-  function printSingle(id) {
-    openModal(id);
-    setTimeout(() => { window.print(); }, 400);
-  }
-
-  // Safe Export Mapping Loops
-  function exportCSV() {
-    if(filteredPRs.length === 0) return;
-    let csv = 'PR Number,Date,Requester,Department,Total Value (SAR),Priority,Status\n';
-    filteredPRs.forEach(p => {
-      csv += `"${p.prNumber || ''}","${p.submittedAt || ''}","${p.requesterName || ''}","${p.department || ''}",${p.grandTotal || 0},"${p.priority || 'MEDIUM'}","${p.status || 'New'}"\n`;
+    // This safely constructs the precise URL without doubling the path
+    const response = await fetch(`${N8N_BASE_URL}/get-prs`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
     });
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", `Procurement_PR_Export_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    
+    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+    
+    const incomingData = await response.json();
+    
+    // Ensure the incoming data is an array before passing it to your table UI
+    allPRs = Array.isArray(incomingData) ? incomingData : [];
+    
+    // Trigger your existing filtering and rendering logic
+    if (typeof applyFilters === "function") {
+        applyFilters(); 
+    }
+    
+  } catch (error) {
+    console.error("Dashboard engine failed to pull data:", error);
+    alert("Backend connection error. Verify your n8n GET webhook is live and active.");
+  } finally {
+    if (refreshBtn) refreshBtn.textContent = "↻ Refresh";
   }
+}
 
-  // ── INIT RUNNERS ──
-  window.onload = function() {
+// (Leave your existing table rendering, filtering, and export functions intact here)
+
+// ── INITIALIZATION ──
+window.onload = () => {
     setTopbarDate();
-    fetchLivePRs();
-  };
+    fetchLivePRs(); // Dynamic initial fetch trigger
+};
 </script>
 </body>
 </html>
