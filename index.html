@@ -918,7 +918,7 @@ async function fetchLivePRs() {
     if (refreshBtn) refreshBtn.textContent = "⏳ Loading...";
     
     // This safely constructs the precise URL without doubling the path
-    const response = await fetch(`${N8N_BASE_URL}/get-prs`, {
+    const response = await fetch(`${N8N_BASE_URL}`, {
     method: 'GET',
     headers: { 'Accept': 'application/json' }
 });
