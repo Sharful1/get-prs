@@ -900,7 +900,7 @@ let sortAsc = false;
 
 // ⚠️ CONNECT LIVE WEBHOOK DOMAIN HERE (Omit trailing slash)
 // Currently set to testing. Change to "/webhook" when you activate the workflow in n8n.
-const N8N_BASE_URL = "https://n8n.srv1106977.hstgr.cloud/webhook";
+const N8N_BASE_URL = "https://n8n.srv1106977.hstgr.cloud/webhook-test";
 // ── TOPBAR DATE ──
 function setTopbarDate() {
     const dateElement = document.getElementById('topbar-date');
@@ -918,9 +918,9 @@ async function fetchLivePRs() {
     
     // This safely constructs the precise URL without doubling the path
     const response = await fetch(`${N8N_BASE_URL}/get-prs`, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' }
-    });
+    method: 'GET',
+    headers: { 'Accept': 'application/json' }
+});
     
     if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
     
